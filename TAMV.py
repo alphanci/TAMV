@@ -287,6 +287,7 @@ class App(QMainWindow):
                     os.makedirs('./config',exist_ok=True)
                     # No settings file defined, create a default file
                     _logger.info('  .. creating new settings.json..')
+                    self.__userSettings = {}
                     # create a camera array
                     self.__userSettings['camera'] = [
                         {
