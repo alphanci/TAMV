@@ -163,7 +163,7 @@ class PrinterManager(QObject):
         _logger.debug('*** exiting PrinterManager.connectPrinter')
 
     @pyqtSlot(object)
-    def disconnectPrinter(self, kwargs={}):
+    def disconnectPrinter(self, *args, **kwargs):
         try:
             parkPosition = kwargs['parkPosition']
         except: 
