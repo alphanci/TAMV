@@ -166,7 +166,7 @@ class PrinterManager(QObject):
     def disconnectPrinter(self, kwargs={}):
         try:
             parkPosition = kwargs['parkPosition']
-        except KeyError: 
+        except: 
             parkPosition = None
         try:
             noUpdate = kwargs['noUpdate']
