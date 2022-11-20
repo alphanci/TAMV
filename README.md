@@ -1,6 +1,6 @@
 **TAMV _is under active development!_**
 # Table of Contents
-- [TAMV Walkthrough Video](#tamv-beta-in-action)
+- [TAMV Walkthrough Video](#tamv-in-action)
 - [TAMV = Tool Alignment (using) Machine Vision](#tamv--tool-alignment-using-machine-vision)
 - [Why should I use this version/fork of TAMV?](#why-should-i-use-this-versionfork-of-tamv)
 - [What's included in this package?](#whats-included-in-this-package)
@@ -15,7 +15,7 @@
 
 **You can find me (H2B) on the [Jubilee Discord Server](https://discord.gg/XkphRqb) and I'll be more than glad to help you get things up and running.**
 
-# TAMV Beta in Action
+# TAMV in Action
 We've got a short walkthrough of TAMV in operation up on YouTube, and there you can see a real-time setup and alignment for a 3 tool printer. Click on the image to head over there!
 <p align="center">
 <a href="https://youtu.be/1nGc_hFzK0s?t=5"><img src="resources/video_cap.png">
@@ -29,28 +29,25 @@ Well, welcome to the wonderful experience of **automated nozzle alignment** and 
 
 This program significantly improves how tool-changing machines using Duet RRF v2/3 on Duet2 / Duet3 controlers by leveraging open-source computer vision algorithms from the OpenCV project to eliminate the guesswork from tool alignment and (nearly) completely automate the process. Let the machines do the work!
 
-TAMV in its current release is a graphical program that allows you to connect to your printer and automatically calculate tool offsets in XY space using a generic [USB microscope](https://www.amazon.co.uk/gp/product/B07KQDQ4VR/) and a Raspberry Pi (preferably a Pi4 or better).
+TAMV in its current release is a graphical program that allows you to connect to your printer and automatically calculate tool offsets in XY space using a generic [USB microscope](https://www.amazon.com/dp/B06WD843ZM) and a Raspberry Pi (preferably a Pi4 or better with 4GB of RAM). You may also use any Windows or Linux desktop/laptop, as long as you can connect that machine to the microscope situated on the printer build plate. 
 
-You may opt to use a webcam for tool alignment, but this approach (while reliable) will need significantly more work to overcome issues related to insufficient/inappropriate lighting and limited depth-of-field of webcam optics (not to mention more sensor noise artifacts), all of which can throw off the computer vision algorithms and cause headaches.
+Please avoid using any webcams for alignment, because this approach (while viable) will need significantly more work to overcome issues related to insufficient/inappropriate lighting and limited depth-of-field of webcam optics (not to mention more sensor noise artifacts), all of which can throw off the computer vision algorithms and cause headaches.
 
 _[back to top](#table-of-contents)_
 # Why should I use this version/fork of TAMV?
-1. Its now a graphical interface with ZERO command line steps at run-time.
-2. Its got a bundled installation script for getting OpenCV 4.5.1 running on a Raspberry Pi (it will take 1.5 hours to install the first time)
-3. The program guides you through the alignment process by only enabling the right procedures at the right times.
-4. The computer vision functions automatically calibrate your camera output to your machine's movement so there's no need to worry about lens distortion or slightly off-plane images.
-5. You may use any USB webcam (no picam yet!) that is compatible with Raspbian (when running TAMV on a Raspberry Pi)
-6. You can also use RTSP/network cameras and run the main program on a desktop/laptop if you so prefer (just need Python -- not much benefit over a Raspberry Pi 4 since the computer vision is running some basic blob detection.)
-7. TAMV can run repeatability tests for your machine (based on the number of cycles you define) and export/display useful visualizations of how your machine behaves over time to aid in identifying tool drift.
-8. TAMV allows you to save your machine address and some advanced parameters to save you some time when running it multiple times
-9. **Its completely open-source and community driven.**
-10. *Did we mention its a graphical interface now?*
+1. Its got a bundled installation script for getting OpenCV 4.5.1 running on a Raspberry Pi (it will take 1.5 hours to install the first time)
+2. The program guides you through the alignment process by only enabling the right procedures at the right times.
+3. The computer vision functions automatically calibrate your camera output to your machine's movement so there's no need to worry about lens distortion or slightly off-plane images.
+4. You may use any USB webcam (no picam yet!) that is compatible with Raspbian (when running TAMV on a Raspberry Pi)
+5. You can also use RTSP/network cameras and run the main program on a desktop/laptop if you so prefer (just need Python -- not much benefit over a Raspberry Pi 4 since the computer vision is running some basic blob detection.)
+6. TAMV can run repeatability tests for your machine (based on the number of cycles you define) and export/display useful visualizations of how your machine behaves over time to aid in identifying tool drift.
+7. TAMV allows you to save your machine address and some advanced parameters to save you some time when running it multiple times.
+8. **Its completely open-source and community driven.**
 
 _[back to top](#table-of-contents)_
 # What's included in this package?
-1. **TAMV_GUI.py**: the main interface for automated X/Y offset tool alignment using computer vision
+1. **TAMV.py**: the main interface for automated X/Y offset tool alignment using computer vision
 2. **ZTATP.py**: a second program that uses electrical touch plates to physically measure tool Z offsets using your Duet controller's endstop inputs
-3. **TAMV.py**: the "original" command line version of TAMV, which also includes data export and repeatability testing
 
 _[back to top](#table-of-contents)_
 # What do I need to run TAMV?
@@ -72,13 +69,13 @@ _[back to top](#table-of-contents)_
    
    OpenCV requires at least 2GB of RAM to be installed, keep this in mind before jumping into installing openCV. It also takes over an hour to compile OpenCV on a Raspberry Pi 4
 
-3. **[A generic USB microscope](https://www.amazon.co.uk/gp/product/B07KQDQ4VR/) with the light controls built-in to the USB cable**  
+3. **[A generic USB microscope](https://www.amazon.com/gp/product/B06WD843ZM/) with the light controls built-in to the USB cable**  
    
    This is a generic mass-manufactured part commonly found at your favorite ecommerce outlet of choice. **Make sure you are using the variant that has a lighting control wheel built-in to the USB cable**, as there are alternative versions that look very similar which lack lighting control and have been found to be incompatible with Raspbian and will not work.  
    
    You may choose to use a webcam you already have at home, but be mindful that computer vision requires a specific type of lighting (mainly soft diffuse light directed perpendicular from the camera to the object/nozzle) to work consistently. Webcams also tend to have wide-angle lens optics and offer a very coarse depth of focus, further complicating things when you need to focus on a 0.4mm nozzle from a 25mm focal distance. Add to that webcam sensors typically exhibit a lot of noise artifacts when forced to zoom in so closely to the nozzles. Overall, it will work, but you'll need to fiddle with it until its just right. We all started using TAMV with Logitech C270 webcams, and then moved to microscopes for the vastly superior experience.
    
-   [Amazon US Link](https://www.amazon.com/gp/product/B07F7T7SC1/)
+   [Amazon US Link](https://www.amazon.com/gp/product/B06WD843ZM/)
    
    [Amazon UK Link](https://www.amazon.co.uk/gp/product/B07KQDQ4VR/)
    
@@ -123,8 +120,8 @@ _[back to top](#table-of-contents)_
    type `git clone https://github.com/HaythamB/TAMV` and hit enter
    
 2. type `cd TAMV` and press enter
-3. Run `~/TAMV/install_opencv.sh`
-4. Wait about 20 minutes for everything to be installed
+3. Run `./install_opencv.sh`
+4. Wait 5 to 15 minutes for everything to be installed
  
  Note for Raspberry Pi 3 users: you will probably have to increase the default SWAP size to at least 2GB for the install to run successfully. Here's the commands to run before installing openCV to set up a 2GB swap file. Run a Google search on "how to increase raspberry pi 3 swap size" for more info.
  
@@ -136,12 +133,12 @@ sudo /etc/init.d/dphys-swapfile start
 
 _[back to top](#table-of-contents)_
 # How do I run these packages?
-## TAMV_GUI
+## TAMV
 1. Connect your microscope/webcam to a USB port (preferably only connect 1 when starting it for the first time)
-2. Open a terminal window *from the Raspbian desktop and NOT AN SSH SESSION* and run `~/TAMV/TAMV_GUI.py`
+2. Open a terminal window *from the Raspbian desktop and NOT AN SSH SESSION* and run `cd TAMV` and then `./TAMV.py` or `python3 ./TAMV.py`
 3. Follow the buttons and prompts on-screen. There are tooltips everywhere to guide you!
    
-   You can always also watch [this video here](https://youtu.be/1nGc_hFzK0s?t=5) to see how a calibration is run.
+   You can always also watch [this video here](https://youtu.be/1nGc_hFzK0s?t=5) to see how a calibration is run for an older release of TAMV.
 
 TAMV.py = Tool Align Machine Vision - for Duet based tool changing 3D printers.
 
@@ -189,44 +186,6 @@ set a run for an individual tool number
 NOTE: Requires Wiring! Each nozzle must be wired to the GPIO specified (default is io5.in, can be overriden on command line).  The touchplate must be grounded. Recommend about running with finger on power switch, in case a given touch does not stop. 
 
 _[back to top](#table-of-contents)_
-## TAMV (legacy command-line interface)
-### Preparation steps
-TAMV, ZTATP, and their associated plot functions utilize Python3+, and some additional libraries for GUI elements and processing. If you have some errors while running the code, consider running the following commands to install missing modules.
-
-    sudo apt-get update
-    sudo apt-get upgrade
-    sudo apt-get install python3-matplotlib
-    sudo apt-get install python3-pyqt5
-
-### Installation
-
-    cd
-    git clone https://github.com/HaythamB/TAMV/
-
-### Run
-    usage: TAMV.py [-h] [-duet DUET] [-vidonly] [-camera CAMERA] [-cp CP CP]
-                   [-repeat REPEAT] [-xray] [-loose] [-export] [-alternate]
-    
-    Program to allign multiple tools on Duet based printers, using machine vision.
-    
-    optional arguments:
-      -h, --help      show this help message and exit
-      -duet DUET      Name or IP address of Duet printer. You can use
-                      -duet=localhost if you are on the embedded Pi on a Duet3.
-      -vidonly        Open video window and do nothing else.
-      -camera CAMERA  Index of /dev/videoN device to be used. Default 0.
-      -cp CP CP       x y that will put 'controlled point' on carriage over
-                      camera.
-      -repeat REPEAT  Repeat entire alignment N times and report statistics
-      -xray           Display edge detection output for troubleshooting.
-      -loose          Run circle detection algorithm with less stringent
-                      parameters to help detect worn nozzles.
-      -export         Export repeat raw data to output.csv when done.
-      -alternate      Try alternative nozzle detection method
-
-
-_[back to top](#table-of-contents)_
-
 # TAMV Community Videos
 ## Danal's Original TAMV Release
 You can find the original release of [TAMV in Danal Estes' repository](https://github.com/DanalEstes/TAMV).
