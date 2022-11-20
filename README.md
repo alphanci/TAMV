@@ -35,14 +35,16 @@ Please avoid using any webcams for alignment, because this approach (while viabl
 
 _[back to top](#table-of-contents)_
 # Why should I use this version/fork of TAMV?
-1. Its got a bundled installation script for getting OpenCV 4.5.1 running on a Raspberry Pi using pre-compiled OpenCV binaries. Takes about 5 minutes to install.
-2. The program guides you through the alignment process by only enabling the right procedures at the right times.
-3. The computer vision functions automatically calibrate your camera output to your machine's movement so there's no need to worry about lens distortion or slightly off-plane images.
-4. TAMV is fully multi-process and multi-threaded for faster operations.
-5. It automatically uses 4 different detection sets to find the best one for the nozzle you're trying to align.
-6. Its built to be extensible, and we do have a few klipper beta testers working on a driver for klipper toolchangers!
-7. TAMV allows you to save multiple printer profiles and connect to them whenever you want to align them.
-8. **Its completely open-source and community driven.**
+1. Its got a bundled installation script for getting OpenCV 4.5.1 running on a Raspberry Pi.
+2. **It takes about 5 minutes to install.**
+3. TAMV is fully multi-processing and multi-threading for faster run times.
+4. Automatically calibrates itself for optical distortions, making alignment smoother and faster.
+5. Switches automatically between 4 different detection modes to lock on to the nozzle quickly.
+6. Fails over to manual alignment capture when the nozzle can't be detected.
+7. **Supports manual or semi-assisted alignments so you can use it with any tools in your toolchanger**
+7. Its built to be extensible, and we do have a few klipper beta testers working on a driver for klipper toolchangers!
+8. You can save multiple printer profiles and re-use your connections every time you align your tools.
+9. **Its completely open-source and community driven.**
 
 _[back to top](#table-of-contents)_
 # What's included in this package?
