@@ -35,13 +35,13 @@ Please avoid using any webcams for alignment, because this approach (while viabl
 
 _[back to top](#table-of-contents)_
 # Why should I use this version/fork of TAMV?
-1. Its got a bundled installation script for getting OpenCV 4.5.1 running on a Raspberry Pi (it will take 1.5 hours to install the first time)
+1. Its got a bundled installation script for getting OpenCV 4.5.1 running on a Raspberry Pi using pre-compiled OpenCV binaries. Takes about 5 minutes to install.
 2. The program guides you through the alignment process by only enabling the right procedures at the right times.
 3. The computer vision functions automatically calibrate your camera output to your machine's movement so there's no need to worry about lens distortion or slightly off-plane images.
-4. You may use any USB webcam (no picam yet!) that is compatible with Raspbian (when running TAMV on a Raspberry Pi)
-5. You can also use RTSP/network cameras and run the main program on a desktop/laptop if you so prefer (just need Python -- not much benefit over a Raspberry Pi 4 since the computer vision is running some basic blob detection.)
-6. TAMV can run repeatability tests for your machine (based on the number of cycles you define) and export/display useful visualizations of how your machine behaves over time to aid in identifying tool drift.
-7. TAMV allows you to save your machine address and some advanced parameters to save you some time when running it multiple times.
+4. TAMV is fully multi-process and multi-threaded for faster operations.
+5. It automatically uses 4 different detection sets to find the best one for the nozzle you're trying to align.
+6. Its built to be extensible, and we do have a few klipper beta testers working on a driver for klipper toolchangers!
+7. TAMV allows you to save multiple printer profiles and connect to them whenever you want to align them.
 8. **Its completely open-source and community driven.**
 
 _[back to top](#table-of-contents)_
