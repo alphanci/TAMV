@@ -140,7 +140,7 @@ class printerAPI:
 
         # set base parameters
         self._base_url = baseURL
-        self.password = password
+        self._password = password
         self._nickname = nickname
         self._tools = []
         # Name as defined in RRF config.g file

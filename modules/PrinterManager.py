@@ -123,7 +123,7 @@ class PrinterManager(QObject):
             sys.modules[driverSelect[:-3]] = driverModule
             spec.loader.exec_module(driverModule)
             try:
-                self.__activePrinter = driverModule.printerAPI(self.__printerJSON['address'])
+                self.__activePrinter = driverModule.printerAPI(baseURL=self.__printerJSON['address'],password=self.__printerJSON["password"])
                 if(not self.__activePrinter.isHomed()):
                     # Machine has not been homed yet
                     errorMsg = 'Printer axis not homed. Rectify and reconnect.'
