@@ -433,7 +433,7 @@ class DetectionManager(QObject):
         average_location=[0,0]
         retries = 0
         self.__uv = [None,None]
-        (self.__uv, self.frame) = self.nozzleDetection()
+        self.__uv, self.frame = self.nozzleDetection()
         # draw crosshair
         keypointRadius = 17
         width = 4
@@ -464,7 +464,7 @@ class DetectionManager(QObject):
                 self.frameEvent.set()
                 self.frame = self.pipeDM.recv()
                 self.frameEvent.clear()
-            (self.__uv, self.frame) = self.nozzleDetection()
+            self.__uv, self.frame = self.nozzleDetection()
             if(self.__uv is not None):
                 if(self.__uv[0] is not None and self.__uv[1] is not None):
                     average_location[0] += self.__uv[0]

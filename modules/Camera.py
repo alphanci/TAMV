@@ -113,8 +113,13 @@ class Camera(QtCore.QObject):
         while True:
             ret = self.cap.grab()
             if not ret:
+                _logger.critical('Camera failed to grab a new frame.')
+                self.stop()
+                self.t.join()
+                self.cap.release()
                 break
             if self.stopEvent.is_set():
+                _logger.debug('Camera capture has been stopped.')
                 break
     
     def stop(self):
@@ -134,13 +139,15 @@ class Camera(QtCore.QObject):
         _logger.debug('*** exiting Camera.quit') 
     
     def getFrame(self):
-        # self.__success, self.__frame = self.cap.read()
-        # if(self.__success):
-            # return(self.__frame)
-        # else:
-            # self.cap.release()
-            # raise Exception
-        ret, frame = self.cap.retrieve()
+        try:
+            ret, frame = self.cap.retrieve()
+        except Exception as e:
+            _logger.critical('getFrame could not read from camera source.')
+            _logger.critical(e)
+            self.stop()
+            self.t.join()
+            self.cap.release()
+            return -1
         return frame
 
     def getImagePropertiesJSON(self):
