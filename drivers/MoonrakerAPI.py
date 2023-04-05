@@ -722,7 +722,18 @@ class printerAPI:
             'nickname': self._nickname,
             'controller': self._firmwareName,
             'version': self._firmwareVersion,
-            'tools': []
+            'tools': [
+              {
+                "number": 0,
+                "name": "Tool 0",
+                "nozzleSize": 0.4,
+                "offsets": [
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
         }
         for i, currentTool in enumerate(self.tools):
             printerJSON['tools'].append(currentTool.getJSON())
