@@ -24,6 +24,9 @@ import re
 # invoke parent (TAMV) _logger
 _logger = logging.getLogger('TAMV.MoonrakerAPI')
 
+#import debugpy
+#debugpy.debug_this_thread()
+
 #################################################################################################################################
 #################################################################################################################################
 # Main class for interface
@@ -41,17 +44,20 @@ class printerAPI:
     #################################################################################################################################
     # G-Code Commands
     #
-    G_CODE_SET_TOOL_OFFSET = "SET_TOOL_OFFSET TOOL=%s X=%f Y=%f"
-    G_CODE_TOOL_UNLOAD = "T_1"
+    G_CODE_SET_TOOL_OFFSET = "SET_TOOL_XY_OFFSET TOOL=%s X=%f Y=%f"
+    G_CODE_TOOL_UNLOAD = "TOOL_DROPOFF"
     G_CODE_TOOL_LOAD = "T%d"
 
     #################################################################################################################################
     # Data querying/parsing
     #
-    OBJECT_TOOL_REGEX = "tool .+"  # extruder.+
-    OBJECT_TOOL_NAME = "tool %d"  # extruder%d
-    OBJECT_TOOLHEAD = "toollock"  # toolhead
-    OBJECT_TOOLHEAD_TOOL_PROPERTY = "tool_current"  # extruder
+    OBJECT_TOOL_REGEX = r'extruder.*'
+    OBJECT_TOOL_VALUES_NAME = 'gcode_macro extruder%d_values'
+    OBJECT_TOOL_NAME = 'tool%d'
+    OBJECT_TOOLHEAD = "toolhead"
+    OBJECT_TOOLHEAD_TOOL_PROPERTY = "extruder"
+    OBJECT_DOCK_VALUES_NAME = 'gcode_macro DOCK_INIT'
+    OBJECT_TOOL_PRESENT_PROPERTY = 'tool_present'
 
     #################################################################################################################################
     # Instantiate class and connect to controller
@@ -183,12 +189,20 @@ class printerAPI:
     def getCurrentTool(self):
         _logger.debug('Called getCurrentTool')
         try:
-            j = self.query('/printer/objects/query?' + self.OBJECT_TOOLHEAD +
-                           '=' + self.OBJECT_TOOLHEAD_TOOL_PROPERTY)
+            j = self.query('/printer/objects/query?' + self.OBJECT_DOCK_VALUES_NAME)
+            tool_present = bool(j['result']['status'][self.OBJECT_DOCK_VALUES_NAME][self.OBJECT_TOOL_PRESENT_PROPERTY])
+            if not tool_present:
+                return -1
+
+            j = self.query('/printer/objects/query?' + self.OBJECT_TOOLHEAD + '=' + self.OBJECT_TOOLHEAD_TOOL_PROPERTY)
             if 'error' in j:
                 raise FailedToolDetection(j['error']['message'])
             elif 'result' in j:
-                return j['result']['status'][self.OBJECT_TOOLHEAD][self.OBJECT_TOOLHEAD_TOOL_PROPERTY]
+                match = re.search(r'\d', j['result']['status'][self.OBJECT_TOOLHEAD][self.OBJECT_TOOLHEAD_TOOL_PROPERTY])
+                if not match:
+                    return 0
+                else:
+                    return int(match)
 
             # Unknown condition, raise error
             raise FailedToolDetection('Something failed. Baililng.')
@@ -217,18 +231,18 @@ class printerAPI:
     def getToolOffset(self, toolIndex=0):
         _logger.debug('Called getToolOffset')
         try:
-            toolName = self.OBJECT_TOOL_NAME % (toolIndex)
+            toolName = self.OBJECT_TOOL_VALUES_NAME % (toolIndex)
 
-            j = self.query("/printer/objects/query?" + toolName + "=offset")
+            j = self.query("/printer/objects/query?" + toolName)
             if 'error' in j:
                 raise FailedOffsetCapture(j['error']['message'])
             elif 'result' in j:
-                offsets = j['result']['status'][toolName]['offset']
+                tool = j['result']['status'][toolName]
 
             return ({
-                'X': float(offsets[0]),
-                'Y': float(offsets[1]),
-                'Z': float(offsets[2])
+                'X': float(tool['x']),
+                'Y': float(tool['y']),
+                'Z': float(tool['z'])
             })
         except FailedOffsetCapture as fd:
             _logger.critical(str(fd))
