@@ -7,6 +7,9 @@ import sys, time
 import importlib, importlib.util
 import numpy as np
 
+#import debugpy
+#debugpy.debug_this_thread()
+
 class PrinterManager(QObject):
     # class attributes
     __printerJSON = None

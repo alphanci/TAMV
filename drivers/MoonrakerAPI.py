@@ -17,15 +17,17 @@ import logging
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+
 # shared import dependencies
 import json
 import time
 import re
-# invoke parent (TAMV) _logger
-_logger = logging.getLogger('TAMV.MoonrakerAPI')
 
-#import debugpy
-#debugpy.debug_this_thread()
+# invoke parent (TAMV) _logger
+_logger = logging.getLogger("TAMV.MoonrakerAPI")
+
+# import debugpy
+# debugpy.debug_this_thread()
 
 #################################################################################################################################
 #################################################################################################################################
@@ -51,13 +53,13 @@ class printerAPI:
     #################################################################################################################################
     # Data querying/parsing
     #
-    OBJECT_TOOL_REGEX = r'extruder.*'
-    OBJECT_TOOL_VALUES_NAME = 'gcode_macro extruder%d_values'
-    OBJECT_TOOL_NAME = 'tool%d'
+    OBJECT_TOOL_REGEX = r"extruder.*"
+    OBJECT_TOOL_VALUES_NAME = "gcode_macro extruder%d_values"
+    OBJECT_TOOL_NAME = "tool%d"
     OBJECT_TOOLHEAD = "toolhead"
     OBJECT_TOOLHEAD_TOOL_PROPERTY = "extruder"
-    OBJECT_DOCK_VALUES_NAME = 'gcode_macro DOCK_INIT'
-    OBJECT_TOOL_PRESENT_PROPERTY = 'tool_present'
+    OBJECT_DOCK_VALUES_NAME = "gcode_macro DOCK_INIT"
+    OBJECT_TOOL_PRESENT_PROPERTY = "tool_present"
 
     #################################################################################################################################
     # Instantiate class and connect to controller
@@ -70,17 +72,17 @@ class printerAPI:
     #
     # Raises:
     #   - UnknownController: if fails to connect
-    def __init__(self, baseURL, nickname='Default', password='none'):
-        _logger.debug('Starting API..')
+    def __init__(self, baseURL, nickname="Default", password="none"):
+        _logger.debug("Starting API..")
 
         self.session = requests.Session()
         self.retry = Retry(connect=3, backoff_factor=0.4)
         self.adapter = HTTPAdapter(max_retries=self.retry)
-        self.session.mount('http://', self.adapter)
+        self.session.mount("http://", self.adapter)
 
         # Here are the required class attributes. These get saved to settings.json
         self._base_url = baseURL
-        self._name = 'My Klipper'
+        self._name = "My Klipper"
         self._nickname = nickname
         self._firmwareName = "klipper"
         self._firmwareVersion = ""
@@ -89,26 +91,33 @@ class printerAPI:
 
         try:
             state = self.getKlippyState()
-            if (state != "ready"):
+            if state != "ready":
                 # The board has failed to connect, return an error state
-                raise UnknownController('Unknown controller detected.')
+                raise UnknownController("Unknown controller detected.")
 
             # Setup tool definitions
             toolCount = self.getNumTools()
             for i in range(toolCount):
                 toolOffset = self.getToolOffset(i)
 
-                offsetX = round(float(toolOffset['X']), 3)
-                offsetY = round(float(toolOffset['Y']), 3)
-                offsetZ = round(float(toolOffset['Z']), 3)
+                offsetX = round(float(toolOffset["X"]), 3)
+                offsetY = round(float(toolOffset["Y"]), 3)
+                offsetZ = round(float(toolOffset["Z"]), 3)
 
-                _logger.info("Adding tool %d with offsets %f, %f, %f" %
-                             (i, offsetX, offsetY, offsetZ))
+                _logger.info(
+                    "Adding tool %d with offsets %f, %f, %f"
+                    % (self.tools[i]._number, offsetX, offsetY, offsetZ)
+                )
+
+                # Because we are using the real toolhead position without any offsets applied.
+                self.tools[i]._offsets = {"X": 0, "Y": 0, "Z": 0}
+                self.tools[i]._real_offsets = {"X": offsetX, "Y": offsetY, "Z": offsetZ}
 
                 tempTool = Tool(
                     number=i,
                     name=self.OBJECT_TOOL_NAME % (i),
-                    offsets={'X': offsetX, 'Y': offsetY, 'Z': offsetZ})
+                    offsets={"X": offsetX, "Y": offsetY, "Z": offsetZ},
+                )
                 self.tools.append(tempTool)
 
         except UnknownController as uc:
@@ -118,22 +127,26 @@ class printerAPI:
             # Catastrophic error. Bail.
             _logger.critical(str(e))
             raise SystemExit(e)
-        _logger.info('  .. connected to ' + self._firmwareName +
-                     '- V' + self._firmwareVersion + '..')
+        _logger.info(
+            "  .. connected to "
+            + self._firmwareName
+            + "- V"
+            + self._firmwareVersion
+            + ".."
+        )
         return
 
     def getKlippyState(self):
-        j = self.query('/server/info')
-        if 'error' in j:
-            raise StatusException(j['error']['message'])
-        elif 'result' in j:
-            state = j['result']['klippy_state']
+        j = self.query("/server/info")
+        if "error" in j:
+            raise StatusException(j["error"]["message"])
+        elif "result" in j:
+            state = j["result"]["klippy_state"]
             return state
 
     def query(self, url):
-        URL = (f'{self._base_url}' + url)
-        r = self.session.get(URL, timeout=(
-            self._requestTimeout, self._responseTimeout))
+        URL = f"{self._base_url}" + url
+        r = self.session.get(URL, timeout=(self._requestTimeout, self._responseTimeout))
         j = json.loads(r.text)
         return j
 
@@ -147,10 +160,10 @@ class printerAPI:
     #
     # Raises: NONE
     def getPrinterType(self):
-        _logger.debug('Called getPrinterType')
+        _logger.debug("Called getPrinterType")
         ##############*** YOUR CUSTOM CODE #################
         ##############*** YOUR CUSTOM CODE #################
-        return (0)
+        return 0
 
     #################################################################################################################################
     # Get number of defined tools from machine
@@ -163,16 +176,25 @@ class printerAPI:
     # Raises:
     #   - FailedToolDetection: when cannot determine number of tools on machine
     def getNumTools(self):
-        _logger.debug('Called getNumTools')
+        _logger.debug("Called getNumTools")
         count = 0
-        j = self.query('/printer/objects/list')
-        if 'error' in j:
-            raise FailedToolDetection(j['error']['message'])
-        elif 'result' in j:
-            for t in j['result']['objects']:
+        j = self.query("/printer/objects/list")
+        if "error" in j:
+            raise FailedToolDetection(j["error"]["message"])
+        elif "result" in j:
+            for t in j["result"]["objects"]:
                 if re.match(self.OBJECT_TOOL_REGEX, str.lower(t)):
                     count += 1
-        return (count)
+
+                    arr = re.split("extruder", t)
+                    if arr[1] == "":
+                        nr = 0
+                    else:
+                        nr = arr[1]
+
+                    tempTool = Tool(number=int(nr), name=str(t))
+                    self.tools.append(tempTool)
+        return count
 
     #################################################################################################################################
     # Get index of currently loaded tool
@@ -187,34 +209,33 @@ class printerAPI:
     # Raises:
     #   - FailedToolDetection: when cannot determine number of tools on machine
     def getCurrentTool(self):
-        _logger.debug('Called getCurrentTool')
+        _logger.debug("Called getCurrentTool")
         try:
-            j = self.query('/printer/objects/query?' + self.OBJECT_DOCK_VALUES_NAME)
-            tool_present = bool(j['result']['status'][self.OBJECT_DOCK_VALUES_NAME][self.OBJECT_TOOL_PRESENT_PROPERTY])
+            j = self.query("/printer/objects/query?" + self.OBJECT_DOCK_VALUES_NAME)
+            tool_present = bool(
+                j["result"]["status"][self.OBJECT_DOCK_VALUES_NAME][
+                    self.OBJECT_TOOL_PRESENT_PROPERTY
+                ]
+            )
             if not tool_present:
                 return -1
 
-            j = self.query('/printer/objects/query?' + self.OBJECT_TOOLHEAD + '=' + self.OBJECT_TOOLHEAD_TOOL_PROPERTY)
-            if 'error' in j:
-                raise FailedToolDetection(j['error']['message'])
-            elif 'result' in j:
-                match = re.search(r'\d', j['result']['status'][self.OBJECT_TOOLHEAD][self.OBJECT_TOOLHEAD_TOOL_PROPERTY])
-                if not match:
-                    return 0
-                else:
-                    return int(match)
+            current_tool = j["result"]["status"][self.OBJECT_DOCK_VALUES_NAME][
+                "current_tool"
+            ]
+            _logger.debug("Current tool is T" + str(current_tool))
+            return current_tool
 
             # Unknown condition, raise error
-            raise FailedToolDetection('Something failed. Baililng.')
+            raise FailedToolDetection("Something failed. Baililng.")
         except ConnectionError as ce:
-            _logger.critical('Connection error while polling for current tool')
+            _logger.critical("Connection error while polling for current tool")
             raise SystemExit(ce)
         except FailedToolDetection as fd:
-            _logger.critical('Failed tool detection.')
+            _logger.critical("Failed tool detection.")
             raise SystemExit(e1)
         except Exception as e1:
-            _logger.critical(
-                'Unhandled exception in getCurrentTool: ' + str(e1))
+            _logger.critical("Unhandled exception in getCurrentTool: " + str(e1))
             raise SystemExit(e1)
 
     #################################################################################################################################
@@ -229,30 +250,24 @@ class printerAPI:
     # Raises:
     #   - FailedOffsetCapture: when cannot determine number of tools on machine
     def getToolOffset(self, toolIndex=0):
-        _logger.debug('Called getToolOffset')
+        _logger.debug("Called getToolOffset")
         try:
-            toolName = self.OBJECT_TOOL_VALUES_NAME % (toolIndex)
+            extruder = self.OBJECT_TOOL_VALUES_NAME % toolIndex
+            j = self.query("/printer/objects/query?" + extruder)
+            if "error" in j:
+                raise FailedOffsetCapture(j["error"]["message"])
+            elif "result" in j:
+                vals = j["result"]["status"][extruder]
 
-            j = self.query("/printer/objects/query?" + toolName)
-            if 'error' in j:
-                raise FailedOffsetCapture(j['error']['message'])
-            elif 'result' in j:
-                tool = j['result']['status'][toolName]
-
-            return ({
-                'X': float(tool['x']),
-                'Y': float(tool['y']),
-                'Z': float(tool['z'])
-            })
+            return {"X": float(vals["x"]), "Y": float(vals["y"]), "Z": float(vals["z"])}
         except FailedOffsetCapture as fd:
             _logger.critical(str(fd))
             raise SystemExit(fd)
         except ConnectionError as ce:
-            _logger.critical('Connection error in getToolOffset.')
+            _logger.critical("Connection error in getToolOffset.")
             raise SystemExit(ce)
         except Exception as e1:
-            _logger.critical(
-                'Unhandled exception in getToolOffset: ' + str(e1))
+            _logger.critical("Unhandled exception in getToolOffset: " + str(e1))
             raise SystemExit(e1)
 
     #################################################################################################################################
@@ -269,34 +284,34 @@ class printerAPI:
     #   - StatusException: when cannot determine machine status
     #   - StatusTimeoutException: when machine takes longer than _toolTimeout seconds to respond
     def getStatus(self):
-        _logger.debug('Called getStatus')
+        _logger.debug("Called getStatus")
         try:
-            j = self.query('/printer/info')
-            if 'error' in j:
-                raise StatusException(j['error']['message'])
-            elif 'result' in j:
-                _status = j['result']['state']
+            j = self.query("/printer/info")
+            if "error" in j:
+                raise StatusException(j["error"]["message"])
+            elif "result" in j:
+                _status = j["result"]["state"]
 
-            if (_status == "idle" or _status == "ready"):
+            if _status == "idle" or _status == "ready":
                 _logger.debug("Machine is idle.")
-                return ("idle")
-            elif (_status == "paused"):
+                return "idle"
+            elif _status == "paused":
                 _logger.debug("Machine is paused.")
-                return ("paused")
+                return "paused"
             else:
                 _logger.debug("Machine is busy processing something.")
-                return ("processing")
+                return "processing"
 
             # unknown error raise exception
-            raise StatusException('Unknown error getting machine status')
+            raise StatusException("Unknown error getting machine status")
         except StatusException as se:
             _logger.critical(str(se))
             raise SystemExit(se)
         except ConnectionError as ce:
-            _logger.critical('Connection error in getStatus')
+            _logger.critical("Connection error in getStatus")
             raise SystemExit(ce)
         except Exception as e1:
-            _logger.critical('Unhandled exception in getStatus: ' + str(e1))
+            _logger.critical("Unhandled exception in getStatus: " + str(e1))
             raise SystemExit(e1)
 
     #################################################################################################################################
@@ -310,28 +325,28 @@ class printerAPI:
     # Raises:
     #   - CoordinatesException: when cannot determine machine status
     def getCoordinates(self):
-        _logger.debug('Called getCoordinates')
+        _logger.debug("Called getCoordinates")
         try:
-            j = self.query('/printer/objects/query?gcode_move=gcode_position')
-            if 'error' in j:
-                raise CoordinatesException(j['error']['message'])
-            elif 'result' in j:
-                coords = j['result']['status']['gcode_move']['gcode_position']
+            j = self.query("/printer/objects/query?gcode_move=position")
+            if "error" in j:
+                raise CoordinatesException(j["error"]["message"])
+            elif "result" in j:
+                # Using the real toolhead position without any offsets applied.
+                coords = j["result"]["status"]["gcode_move"]["position"]
 
-            return ({
-                'X': round(coords[0], 3),
-                'Y': round(coords[1], 3),
-                'Z': round(coords[2], 3)
-            })
+            return {
+                "X": round(coords[0], 3),
+                "Y": round(coords[1], 3),
+                "Z": round(coords[2], 3),
+            }
         except CoordinatesException as ce1:
             _logger.critical(str(ce1))
             raise SystemExit(ce1)
         except ConnectionError as ce:
-            _logger.critical('Connection error in getCoordinates')
+            _logger.critical("Connection error in getCoordinates")
             raise SystemExit(ce)
         except Exception as e1:
-            _logger.critical(
-                'Unhandled exception in getCoordinates: ' + str(e1))
+            _logger.critical("Unhandled exception in getCoordinates: " + str(e1))
             raise SystemExit(e1)
 
     #################################################################################################################################
@@ -347,21 +362,55 @@ class printerAPI:
     # Raises:
     #   - SetOffsetException: when failed to set offsets in controller
     def setToolOffsets(self, tool=None, X=None, Y=None, Z=None):
-        _logger.debug('Called setToolOffsets')
+        _logger.debug("Called setToolOffsets")
         try:
             if len(self.G_CODE_SET_TOOL_OFFSET.strip()) == 0:
                 _logger.info(
-                    "No G_CODE_SET_TOOL_OFFSET configured, tool offset not set.")
+                    "No G_CODE_SET_TOOL_OFFSET configured, tool offset not set."
+                )
                 return
             # Check for invalid tool index, raise exception if needed.
-            if (tool is None):
+            if tool is None:
                 raise SetOffsetException("No tool index provided.")
             # Check that any valid offset has been passed as an argument
-            elif (X is None and Y is None):
+            elif X is None and Y is None:
                 raise SetOffsetException("Invalid offsets provided.")
             else:
-                self.gCode(self.G_CODE_SET_TOOL_OFFSET %
-                           (str(tool), round(float(X), 3), round(float(Y), 3)))
+                _logger.debug(
+                    "T%d previous offset: %f, %f, %f"
+                    % (
+                        self.tools[tool]._number,
+                        self.tools[tool]._real_offsets["X"],
+                        self.tools[tool]._real_offsets["Y"],
+                        self.tools[tool]._real_offsets["Z"],
+                    )
+                )
+                _logger.debug(
+                    "T%d offset recieved: %f, %f, %f"
+                    % (self.tools[tool]._number, X, Y, 0)
+                )
+                _logger.debug(
+                    "T%d reversed offset recieved: %f, %f, %f"
+                    % (self.tools[tool]._number, -X, -Y, 0)
+                )
+                # Calculate new offset
+                X = self.tools[tool]._real_offsets["X"] - X
+                Y = self.tools[tool]._real_offsets["Y"] - Y
+
+                _logger.debug(
+                    "T%d Calculated offset: %f, %f, %f"
+                    % (
+                        self.tools[tool]._number,
+                        round(float(X), 3),
+                        round(float(X), 3),
+                        self.tools[tool]._real_offsets["Z"],
+                    )
+                )
+
+                self.gCode(
+                    self.G_CODE_SET_TOOL_OFFSET
+                    % (str(tool), round(float(X), 3), round(float(Y), 3))
+                )
                 _logger.debug("Tool offsets applied.")
         except SetOffsetException as se:
             _logger.error(se)
@@ -379,7 +428,7 @@ class printerAPI:
         _logger.debug("Called isIdle")
         state = self.getStatus()
 
-        if (state == "idle"):
+        if state == "idle":
             return True
         else:
             return False
@@ -394,12 +443,12 @@ class printerAPI:
         try:
             homed = False
 
-            j = self.query('/printer/objects/query?toolhead=homed_axes')
-            if 'result' in j:
-                homed_axes = j['result']['status']['toolhead']['homed_axes']
-                homed = homed_axes == 'xyz'
+            j = self.query("/printer/objects/query?toolhead=homed_axes")
+            if "result" in j:
+                homed_axes = j["result"]["status"]["toolhead"]["homed_axes"]
+                homed = homed_axes == "xyz"
 
-            if (homed):
+            if homed:
                 return True
             else:
                 return False
@@ -424,7 +473,7 @@ class printerAPI:
     # Raises:
     #   - ToolTimeoutException: machine took too long to load the tool
     def loadTool(self, toolIndex=0):
-        _logger.debug('Called loadTool')
+        _logger.debug("Called loadTool")
         # variable to hold current tool loading "virtual" timer
         toolchangeTimer = 0
 
@@ -435,19 +484,20 @@ class printerAPI:
             while not self.isIdle() and toolchangeTimer <= self._toolTimeout:
                 toolchangeTimer += 2
                 time.sleep(2)
-            if (toolchangeTimer > self._toolTimeout):
+            if toolchangeTimer > self._toolTimeout:
                 # Request for toolchange timeout, raise exception
                 raise ToolTimeoutException(
-                    "Request to change to tool T" + str(toolIndex) + " timed out.")
+                    "Request to change to tool T" + str(toolIndex) + " timed out."
+                )
             return
         except ToolTimeoutException as tte:
             _logger.warning(str(tte))
             return
         except ConnectionError as ce:
-            _logger.critical('Connection error in loadTool.')
+            _logger.critical("Connection error in loadTool.")
             raise SystemExit(ce)
         except Exception as e1:
-            _logger.critical('Unhandled exception in loadTool: ' + str(e1))
+            _logger.critical("Unhandled exception in loadTool: " + str(e1))
             raise SystemExit(e1)
 
     #################################################################################################################################
@@ -466,7 +516,7 @@ class printerAPI:
     # Raises:
     #   - ToolTimeoutException: machine took too long to load the tool
     def unloadTools(self):
-        _logger.debug('Called unloadTools')
+        _logger.debug("Called unloadTools")
         # variable to hold current tool loading "virtual" timer
         toolchangeTimer = 0
         try:
@@ -476,19 +526,18 @@ class printerAPI:
             while not self.isIdle() and toolchangeTimer <= self._toolTimeout:
                 toolchangeTimer += 2
                 time.sleep(2)
-            if (toolchangeTimer > self._toolTimeout):
+            if toolchangeTimer > self._toolTimeout:
                 # Request for toolchange timeout, raise exception
-                raise ToolTimeoutException(
-                    "Request to unload tools timed out!")
+                raise ToolTimeoutException("Request to unload tools timed out!")
             return
         except ToolTimeoutException as tte:
             _logger.warning(str(tte))
             return
         except ConnectionError as ce:
-            _logger.critical('Connection error in unloadTools')
+            _logger.critical("Connection error in unloadTools")
             raise SystemExit(ce)
         except Exception as e1:
-            _logger.critical('Unhandled exception in unloadTools: ' + str(e1))
+            _logger.critical("Unhandled exception in unloadTools: " + str(e1))
             raise SystemExit(e1)
 
     #################################################################################################################################
@@ -507,26 +556,25 @@ class printerAPI:
     # Raises:
     #   - HomingException: machine is not homed
     def moveRelative(self, rapidMove=False, moveSpeed=1000, X=None, Y=None, Z=None):
-        _logger.debug('Called moveRelative')
+        _logger.debug("Called moveRelative")
         try:
             # check if machine has been homed fully
-            if (self.isHomed() is False):
-                raise HomingException(
-                    "Machine axes have not been homed properly.")
+            if self.isHomed() is False:
+                raise HomingException("Machine axes have not been homed properly.")
 
             commands = []
-            commands.append('G91')
+            commands.append("G91")
             # Create gcode command, starting with rapid flag (G0 / G1)
-            if (rapidMove is True):
+            if rapidMove is True:
                 moveCommand = "G0"
             else:
                 moveCommand = "G1"
             # Add each axis position according to passed arguments
-            if (X is not None):
+            if X is not None:
                 moveCommand += " X" + str(round(float(X), 3))
-            if (Y is not None):
+            if Y is not None:
                 moveCommand += " Y" + str(round(float(Y), 3))
-            if (Z is not None):
+            if Z is not None:
                 moveCommand += " Z" + str(round(float(Z), 3))
 
             # Add move speed to command
@@ -543,7 +591,7 @@ class printerAPI:
             while not self.isIdle() and moveTimer <= self._moveTimeout:
                 moveTimer += 0.25
                 time.sleep(0.25)
-            if (moveTimer > self._moveTimeout):
+            if moveTimer > self._moveTimeout:
                 # Request for move timeout, raise exception
                 raise MoveTimeoutException("Request to move timed out!")
 
@@ -551,11 +599,11 @@ class printerAPI:
             _logger.error(he)
         except Exception as e:
             errorString = "Move failed to relative coordinates: ("
-            if (X is not None):
+            if X is not None:
                 errorString += " X" + str(X)
-            if (Y is not None):
+            if Y is not None:
                 errorString += " Y" + str(Y)
-            if (Z is not None):
+            if Z is not None:
                 errorString += " Z" + str(Z)
             errorString += ") at speed: " + str(moveSpeed)
             _logger.critical(errorString)
@@ -577,26 +625,25 @@ class printerAPI:
     #
     # Raises: NONE
     def moveAbsolute(self, rapidMove=False, moveSpeed=1000, X=None, Y=None, Z=None):
-        _logger.debug('Called moveAbsolute')
+        _logger.debug("Called moveAbsolute")
         try:
             # check if machine has been homed fully
-            if (self.isHomed() is False):
-                raise HomingException(
-                    "Machine axes have not been homed properly.")
+            if self.isHomed() is False:
+                raise HomingException("Machine axes have not been homed properly.")
 
             commands = []
-            commands.append('G90')
+            commands.append("G90")
             # Create gcode command, starting with rapid flag (G0 / G1)
-            if (rapidMove is True):
+            if rapidMove is True:
                 moveCommand = "G0"
             else:
                 moveCommand = "G1"
             # Add each axis position according to passed arguments
-            if (X is not None):
+            if X is not None:
                 moveCommand += " X" + str(round(float(X), 3))
-            if (Y is not None):
+            if Y is not None:
                 moveCommand += " Y" + str(round(float(Y), 3))
-            if (Z is not None):
+            if Z is not None:
                 moveCommand += " Z" + str(round(float(Z), 3))
 
             # Add move speed to command
@@ -614,7 +661,7 @@ class printerAPI:
             while not self.isIdle() and moveTimer <= self._moveTimeout:
                 moveTimer += 0.25
                 time.sleep(0.25)
-            if (moveTimer > self._moveTimeout):
+            if moveTimer > self._moveTimeout:
                 # Request for move timeout, raise exception
                 raise MoveTimeoutException("Request to move timed out!")
 
@@ -622,11 +669,11 @@ class printerAPI:
             _logger.error(he)
         except Exception as e:
             errorString = " move failed to absolute coordinates: ("
-            if (X is not None):
+            if X is not None:
                 errorString += " X" + str(X)
-            if (Y is not None):
+            if Y is not None:
                 errorString += " Y" + str(Y)
-            if (Z is not None):
+            if Z is not None:
                 errorString += " Z" + str(Z)
             errorString += ") at speed: " + str(moveSpeed)
             _logger.critical(errorString + str(e))
@@ -642,7 +689,7 @@ class printerAPI:
     #
     # Raises: NONE
     def limitAxes(self):
-        _logger.debug('Called limitAxes')
+        _logger.debug("Called limitAxes")
         try:
             ##############*** YOUR CUSTOM CODE #################
             ##############*** YOUR CUSTOM CODE #################
@@ -661,7 +708,7 @@ class printerAPI:
     #
     # Raises: NONE
     def flushMovementBuffer(self):
-        _logger.debug('Called flushMovementBuffer')
+        _logger.debug("Called flushMovementBuffer")
         try:
             self.gCode("M400")
             _logger.debug("flushMovementBuffer ran successfully.")
@@ -679,10 +726,11 @@ class printerAPI:
     #
     # Raises: NONE
     def saveOffsetsToFirmware(self):
-        _logger.debug('Called saveOffsetsToFirmware')
+        _logger.debug("Called saveOffsetsToFirmware")
         try:
             _logger.debug(
-                "Saving tool offsets to Klipper firmware is not yet supported.")
+                "Saving tool offsets to Klipper firmware is not yet supported."
+            )
         except Exception as e:
             _logger.error("Failed to save offsets: " + str(e))
             raise SystemExit("Failed to save offsets: " + str(e))
@@ -697,23 +745,23 @@ class printerAPI:
     #   - gCodeBatch: send an array of gcode strings to your controller and execute them sequentially
 
     def gCode(self, command):
-        _logger.debug('gCode called')
+        _logger.debug("gCode called")
 
-        j = self.query('/printer/gcode/script?script=' + command)
+        j = self.query("/printer/gcode/script?script=" + command)
         ok = False
-        if 'error' in j:
-            raise SystemExit(j['error']['message'])
-        elif 'result' in j:
-            ok = j['result'] == "ok"
+        if "error" in j:
+            raise SystemExit(j["error"]["message"])
+        elif "result" in j:
+            ok = j["result"] == "ok"
 
-        if (ok):
+        if ok:
             return 0
         else:
             _logger.error("Error running gCode command")
             raise SystemExit("Error running gCode command")
 
     def gCodeBatch(self, commands):
-        _logger.debug('gCodeBatch called')
+        _logger.debug("gCodeBatch called")
 
         for command in commands:
             self.gCode(command)
@@ -731,16 +779,17 @@ class printerAPI:
     # Raises: NONE
     def getJSON(self):
         printerJSON = {
-            'address': self._base_url,
-            'name': self._name,
-            'nickname': self._nickname,
-            'controller': self._firmwareName,
-            'version': self._firmwareVersion,
-            'tools': []
+            "address": self._base_url,
+            "name": self._name,
+            "nickname": self._nickname,
+            "controller": self._firmwareName,
+            "version": self._firmwareVersion,
+            "tools": [],
         }
         for i, currentTool in enumerate(self.tools):
-            printerJSON['tools'].append(currentTool.getJSON())
-        return (printerJSON)
+            printerJSON["tools"].append(currentTool.getJSON())
+        return printerJSON
+
 
 #################################################################################################################################
 #################################################################################################################################
@@ -750,6 +799,7 @@ class printerAPI:
 
 class Error(Exception):
     """Base class for other exceptions"""
+
     pass
 
 
@@ -788,6 +838,7 @@ class HomingException(Error):
 class MoveTimeoutException(Error):
     pass
 
+
 #################################################################################################################################
 #################################################################################################################################
 # helper class for tool definition
@@ -800,17 +851,21 @@ class Tool:
     _name = "Tool"
     _nozzleSize = 0.4
     _offsets = {"X": 0, "Y": 0, "Z": 0}
+    _real_offsets = {"X": 0, "Y": 0, "Z": 0}
 
-    def __init__(self, number=0, name="Tool", nozzleSize=0.4, offsets={"X": 0, "Y": 0, "Z": 0}):
+    def __init__(
+        self, number=0, name="Tool", nozzleSize=0.4, offsets={"X": 0, "Y": 0, "Z": 0}
+    ):
         self._number = number
         self._name = name
         self._nozzleSize = nozzleSize
         self._offsets = offsets
+        self._real_offsets = offsets
 
     def getJSON(self):
-        return ({
+        return {
             "number": self._number,
             "name": self._name,
             "nozzleSize": self._nozzleSize,
-            "offsets": [self._offsets["X"], self._offsets["Y"], self._offsets["Z"]]
-        })
+            "offsets": [self._offsets["X"], self._offsets["Y"], self._offsets["Z"]],
+        }
